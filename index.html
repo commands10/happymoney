@@ -13,16 +13,35 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
     
     <style>
-        * { font-family: 'Noto Sans KR', sans-serif; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        
-        /* 모바일 주소창 대응 핵심: 100dvh 및 고정 위치 */
-        body, html { 
-            height: 100dvh; margin: 0; overflow: hidden; background: #fff; 
-            position: fixed; width: 100%;
-            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        /* [핵심] 전체 화면 잠금 설정 */
+        * { 
+            font-family: 'Noto Sans KR', sans-serif; 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent; 
+            /* 텍스트 선택 방지 */
+            -webkit-user-select: none; 
+            user-select: none;
         }
 
-        /* 가로 모드 안내 레이어 */
+        body, html { 
+            height: 100dvh; 
+            margin: 0; 
+            padding: 0;
+            /* 스크롤 및 확대 제스처 차단 */
+            overflow: hidden; 
+            touch-action: none; 
+            background: #fff; 
+            position: fixed; 
+            width: 100%;
+        }
+
+        /* [예외] 입력창은 터치와 선택이 가능해야 함 */
+        input, textarea { 
+            -webkit-user-select: text !important; 
+            user-select: text !important; 
+            touch-action: auto !important;
+        }
+
         #rotate-overlay {
             display: none; position: fixed; inset: 0; background: white; z-index: 10000;
             flex-direction: column; align-items: center; justify-content: center; text-align: center;
@@ -36,18 +55,16 @@
         }
         .page.active { display: flex; }
         
-        /* 디자인 시스템: 화이트 바탕, 블루 버튼 */
-        .btn-blue { background: #2563eb; color: white; border-radius: 12px; font-weight: 700; transition: all 0.2s; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); }
+        .btn-blue { background: #2563eb; color: white; border-radius: 12px; font-weight: 700; transition: all 0.2s; }
         .btn-blue:active { transform: scale(0.96); opacity: 0.9; }
 
-        /* 입력창 구역: 가로 모드 한 줄 나열 */
         .input-row { display: flex; gap: 10px; width: 100%; max-width: 850px; margin-bottom: 12px; }
         .input-group { flex: 1; text-align: left; }
-        .custom-input { width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 12px; outline: none; font-size: 14px; transition: border-color 0.2s; }
+        .custom-input { width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 12px; outline: none; font-size: 14px; }
         .custom-input:focus { border-color: #2563eb; }
 
-        /* 표준 3x4 키패드 (컴팩트 사이즈) */
-        .keypad-wrapper { transform: scale(0.85); display: flex; flex-direction: column; align-items: center; }
+        /* 3x4 키패드 (컴팩트 사이즈) */
+        .keypad-wrapper { transform: scale(0.8); display: flex; flex-direction: column; align-items: center; }
         .keypad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 260px; margin-bottom: 15px; }
         .key-btn { background: #f1f5f9; padding: 15px; border-radius: 14px; font-size: 24px; font-weight: 700; border: none; color: #1e293b; }
         .key-btn:active { background: #e2e8f0; transform: scale(0.95); }
@@ -55,9 +72,7 @@
         .pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #2563eb; transition: background 0.2s; }
         .pin-dot.filled { background: #2563eb; }
 
-        /* 고성능 컨페티 캔버스 */
         canvas { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 100; }
-        
         .spinner { width: 35px; height: 35px; border: 4px solid #f3f3f3; border-top: 4px solid #2563eb; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
@@ -67,7 +82,7 @@
     <div id="rotate-overlay">
         <div style="font-size: 50px; margin-bottom: 15px;">📱↔️</div>
         <h2 style="font-size: 22px; font-weight: 900; color: #1e293b;">화면을 가로로 돌려주세요</h2>
-        <p style="color: #64748b; font-size: 14px; margin-top: 10px;">최적의 환경을 위해 가로 모드가 필요합니다</p>
+        <p style="color: #64748b; font-size: 14px; margin-top: 10px;">가로 모드 고정형 앱입니다</p>
     </div>
 
     <canvas id="confetti-canvas"></canvas>
@@ -75,32 +90,30 @@
     <div id="page1" class="page active">
         <div style="font-size: 40px; margin-bottom: 5px;">🎁</div>
         <h1 style="font-size: 22px; font-weight: 900; margin-bottom: 20px;">용돈 서프라이즈 만들기</h1>
-        
         <div class="input-row">
             <div class="input-group">
-                <label style="font-size: 11px; font-weight: 700; color: #64748b; margin-left: 4px;">받는 사람 (예: 엄마)</label>
-                <input id="inName" class="custom-input" placeholder="이름 입력">
+                <label style="font-size: 11px; font-weight: 700; color: #64748b; margin-left: 4px;">받는 사람</label>
+                <input id="inName" class="custom-input" placeholder="이름">
             </div>
             <div class="input-group">
-                <label style="font-size: 11px; font-weight: 700; color: #64748b; margin-left: 4px;">이벤트명 (예: 환갑)</label>
-                <input id="inEvent" class="custom-input" placeholder="기념일 입력">
+                <label style="font-size: 11px; font-weight: 700; color: #64748b; margin-left: 4px;">이벤트명</label>
+                <input id="inEvent" class="custom-input" placeholder="예: 환갑">
             </div>
             <div class="input-group">
-                <label style="font-size: 11px; font-weight: 700; color: #64748b; margin-left: 4px;">준비한 사람 (예: 딸)</label>
+                <label style="font-size: 11px; font-weight: 700; color: #64748b; margin-left: 4px;">준비한 사람</label>
                 <input id="inFrom" class="custom-input" placeholder="보내는 이">
             </div>
         </div>
         <div style="width: 100%; max-width: 850px; margin-bottom: 20px;">
             <label style="font-size: 11px; font-weight: 700; color: #64748b; margin-left: 4px;">마지막 메시지</label>
-            <input id="inMsg" class="custom-input" placeholder="예) 용돈에 만족하셨으면 안아주세요 :)">
+            <input id="inMsg" class="custom-input" placeholder="마지막에 보여줄 메시지">
         </div>
-        
         <button onclick="startApp()" class="btn-blue px-24 py-4 text-lg">시작하기</button>
     </div>
 
     <div id="page2" class="page">
         <div class="text-center px-6">
-            <p id="p2Msg" style="font-size: 30px; font-weight: 800; line-height: 1.5; color: #1e293b; margin-bottom: 40px;"></p>
+            <p id="p2Msg" style="font-size: 28px; font-weight: 800; line-height: 1.5; color: #1e293b; margin-bottom: 30px;"></p>
             <button onclick="goToPage(3)" class="btn-blue px-20 py-5 text-xl">출금하기</button>
         </div>
     </div>
@@ -108,7 +121,7 @@
     <div id="page3" class="page">
         <div class="keypad-wrapper">
             <h2 style="font-size: 18px; font-weight: 700; margin-bottom: 15px;">비밀번호를 입력하세요</h2>
-            <div class="flex gap-4 mb-8">
+            <div class="flex gap-4 mb-6">
                 <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
                 <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
             </div>
@@ -131,16 +144,16 @@
 
     <div id="page4" class="page">
         <div id="wait-section" class="text-center">
-            <div style="font-size: 80px; margin-bottom: 15px; animation: bounce 1.5s infinite;">💳</div>
-            <h2 style="font-size: 28px; font-weight: 900; color: #1e293b; line-height: 1.4;">용돈 출금을 위해서<br>카드를 넣어주세요</h2>
-            <div class="flex flex-col items-center mt-8">
+            <div style="font-size: 70px; margin-bottom: 15px; animation: bounce 1.5s infinite;">💳</div>
+            <h2 style="font-size: 26px; font-weight: 900; color: #1e293b;">용돈 출금을 위해서<br>카드를 넣어주세요</h2>
+            <div class="flex flex-col items-center mt-6">
                 <div class="spinner"></div>
-                <p style="color: #94a3b8; font-weight: 700; margin-top: 15px; font-size: 14px;">보안 연결 중 (10초)</p>
+                <p style="color: #94a3b8; font-weight: 700; margin-top: 10px; font-size: 12px;">보안 연결 중 (10초)</p>
             </div>
         </div>
         <div id="final-section" style="display: none; text-align: center;">
-            <h1 id="final-msg" style="font-size: 42px; font-weight: 900; color: #2563eb; line-height: 1.3;"></h1>
-            <p style="font-size: 20px; font-weight: 700; color: #64748b; margin-top: 20px;">용돈이 출금이 되었습니다 🥳</p>
+            <h1 id="final-msg" style="font-size: 38px; font-weight: 900; color: #2563eb; line-height: 1.3;"></h1>
+            <p style="font-size: 18px; font-weight: 700; color: #64748b; margin-top: 20px;">용돈이 출금이 되었습니다 🥳</p>
         </div>
     </div>
 
@@ -151,20 +164,19 @@
         const ctx = canvas.getContext('2d');
         let particles = [];
 
-        // URL 파라미터 자동 로드
-        window.onload = () => {
-            const params = new URLSearchParams(window.location.search);
-            if(params.get('n')) document.getElementById('inName').value = params.get('n');
-            if(params.get('e')) document.getElementById('inEvent').value = params.get('e');
-            if(params.get('f')) document.getElementById('inFrom').value = params.get('f');
-            if(params.get('m')) document.getElementById('inMsg').value = params.get('m');
-        };
+        // [추가] 브라우저 기본 드래그/스크롤 방지 스크립트
+        document.addEventListener('touchmove', function(e) {
+            // 입력창 이외의 영역에서는 터치 이동 차단
+            if (!e.target.closest('input')) {
+                e.preventDefault();
+            }
+        }, { passive: false });
 
         function triggerFull() {
             const doc = document.documentElement;
             if (doc.requestFullscreen) doc.requestFullscreen().catch(()=>{});
             else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
-            window.scrollTo(0, 1); // 주소창 숨기기 트릭
+            window.scrollTo(0, 0);
         }
 
         function goToPage(num) {
@@ -180,11 +192,8 @@
                 from: document.getElementById('inFrom').value.trim(),
                 msg: document.getElementById('inMsg').value.trim()
             };
-            if(!userData.name || !userData.event) return alert("필수 정보를 입력해주세요!");
-            
-            document.getElementById('p2Msg').innerHTML = 
-                `<span style="color:#2563eb;">${userData.name}</span>의 <span style="color:#2563eb;">${userData.event}</span> 기념으로<br><span style="color:#2563eb;">${userData.from}</span>님이 용돈 서비스를 준비하셨습니다`;
-            
+            if(!userData.name || !userData.event) return alert("정보를 입력해주세요!");
+            document.getElementById('p2Msg').innerHTML = `<span style="color:#2563eb;">${userData.name}</span>의 <span style="color:#2563eb;">${userData.event}</span> 기념으로<br><span style="color:#2563eb;">${userData.from}</span>님이 용돈 서비스를 준비하셨습니다`;
             goToPage(2);
         }
 
@@ -198,7 +207,6 @@
         function finishPin() {
             if(pin.length === 0) return;
             goToPage(4);
-            // 10초 대기 타이머
             setTimeout(() => {
                 document.getElementById('wait-section').style.display = 'none';
                 document.getElementById('final-section').style.display = 'block';
@@ -207,7 +215,6 @@
             }, 10000);
         }
 
-        // 고성능 3D 폭발 컨페티 엔진
         function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
         window.addEventListener('resize', resize);
         resize();
@@ -215,25 +222,21 @@
         class Particle {
             constructor() { this.reset(); }
             reset() {
-                // 중심과 사방에서 랜덤 폭발
                 this.x = Math.random() > 0.5 ? canvas.width/2 : Math.random() * canvas.width;
                 this.y = Math.random() > 0.5 ? canvas.height/2 : Math.random() * canvas.height;
-                this.size = Math.random() * 10 + 5;
+                this.size = Math.random() * 8 + 4;
                 this.color = `hsl(${Math.random() * 360}, 70%, 60%)`;
-                this.vx = (Math.random() - 0.5) * 25;
-                this.vy = (Math.random() - 0.5) * 25;
+                this.vx = (Math.random() - 0.5) * 20;
+                this.vy = (Math.random() - 0.5) * 20;
                 this.opacity = 1;
             }
             update() {
-                this.vx *= 0.98; this.vy += 0.2; this.x += this.vx; this.y += this.vy; this.opacity -= 0.008;
-                if(this.opacity <= 0) this.reset(); // 무한 반복
+                this.vx *= 0.99; this.vy += 0.15; this.x += this.vx; this.y += this.vy; this.opacity -= 0.008;
+                if(this.opacity <= 0) this.reset();
             }
             draw() {
                 ctx.globalAlpha = this.opacity; ctx.fillStyle = this.color;
-                ctx.beginPath();
-                if(Math.random() > 0.5) ctx.arc(this.x, this.y, this.size/2, 0, Math.PI*2);
-                else ctx.fillRect(this.x, this.y, this.size, this.size);
-                ctx.fill();
+                ctx.fillRect(this.x, this.y, this.size, this.size);
             }
         }
 
