@@ -10,28 +10,35 @@
         * { font-family: 'Noto Sans KR', sans-serif; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body, html { height: 100dvh; margin: 0; overflow: hidden; background: #fff; position: fixed; width: 100%; }
         
-        /* [검토사항] 가로 모드 강제 안내 */
+        /* 가로 모드 안내 */
         @media (orientation: portrait) { #rotate-overlay { display: flex !important; } }
         #rotate-overlay { display: none; position: fixed; inset: 0; background: #fff; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; }
 
         .page { display: none; width: 100%; height: 100dvh; flex-direction: column; align-items: center; justify-content: center; padding: 20px; position: absolute; }
         .page.active { display: flex; }
         
-        /* [검토사항] 버튼 파랑, 배경 화이트 */
+        /* 버튼/입력창 공통 */
         .btn-blue { background: #2563eb; color: white; border-radius: 14px; font-weight: 700; transition: all 0.2s; white-space: nowrap; box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.3); }
         .btn-blue:active { transform: scale(0.96); opacity: 0.9; }
         
-        /* [검토사항] 버튼/입력창 한 줄 나열 (가로 최적화) */
-        .input-row { display: flex; gap: 12px; width: 100%; max-width: 950px; margin-bottom: 20px; }
+        .input-row { display: flex; gap: 12px; width: 100%; max-width: 900px; margin-bottom: 20px; }
         .input-group { flex: 1; }
-        .custom-input { width: 100%; padding: 16px; border: 2px solid #e2e8f0; border-radius: 12px; outline: none; transition: all 0.2s; font-size: 15px; background: #f8fafc; }
-        .custom-input:focus { border-color: #2563eb; background: #fff; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
+        .custom-input { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; outline: none; transition: all 0.2s; font-size: 15px; background: #f8fafc; }
+        .custom-input:focus { border-color: #2563eb; background: #fff; }
 
-        /* [검토사항] 비밀번호 키패드 레이아웃 */
-        .numpad-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; width: 100%; max-width: 600px; }
-        .num-btn { background: #f1f5f9; padding: 18px; border-radius: 16px; font-size: 22px; font-weight: 700; border: none; }
-        .num-btn:active { background: #e2e8f0; }
-        .pin-dot { width: 18px; height: 18px; border-radius: 50%; border: 3px solid #2563eb; transition: all 0.2s; }
+        /* [수정] 일반 3x4 키패드 레이아웃 */
+        .numpad-container { width: 100%; max-width: 320px; margin: 0 auto; }
+        .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .num-btn { 
+            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; 
+            padding: 15px 0; font-size: 24px; font-weight: 700; color: #1e293b;
+            display: flex; align-items: center; justify-content: center; transition: all 0.1s;
+        }
+        .num-btn:active { background: #2563eb; color: #fff; border-color: #2563eb; transform: scale(0.95); }
+        .num-btn.special { background: #f1f5f9; font-size: 18px; color: #64748b; }
+        .num-btn.done { background: #2563eb; color: #fff; font-size: 16px; border-color: #2563eb; }
+
+        .pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 3px solid #2563eb; transition: all 0.2s; }
         .pin-dot.filled { background: #2563eb; }
 
         canvas { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 100; }
@@ -41,82 +48,82 @@
 
     <div id="rotate-overlay">
         <div class="text-6xl mb-6">📱🔄</div>
-        <p class="text-2xl font-bold text-slate-800">화면을 가로로 돌려주세요</p>
-        <p class="text-slate-400 mt-2">최적의 서프라이즈를 위해 가로 화면이 필요합니다.</p>
+        <p class="text-2xl font-bold">화면을 가로로 돌려주세요</p>
     </div>
 
     <canvas id="confetti-canvas"></canvas>
 
     <div id="page1" class="page active">
-        <div class="text-center mb-10">
-            <span class="text-5xl">🎁</span>
-            <h1 class="text-3xl font-black mt-4 text-slate-800">용돈 서프라이즈 만들기</h1>
+        <div class="text-center mb-6">
+            <span class="text-4xl">🎁</span>
+            <h1 class="text-2xl font-black mt-2 text-slate-800">용돈 서프라이즈 만들기</h1>
         </div>
 
         <div class="input-row">
             <div class="input-group">
-                <label class="block text-sm font-bold mb-2 ml-1 text-slate-600">받는 사람</label>
+                <label class="block text-xs font-bold mb-1 text-slate-500">받는 사람 이름</label>
                 <input id="inName" class="custom-input" placeholder="예) 엄마, 이순자">
             </div>
             <div class="input-group">
-                <label class="block text-sm font-bold mb-2 ml-1 text-slate-600">이벤트명</label>
+                <label class="block text-xs font-bold mb-1 text-slate-500">이벤트명</label>
                 <input id="inEvent" class="custom-input" placeholder="예) 생일, 환갑">
             </div>
             <div class="input-group">
-                <label class="block text-sm font-bold mb-2 ml-1 text-slate-600">준비한 사람</label>
+                <label class="block text-xs font-bold mb-1 text-slate-500">준비한 사람</label>
                 <input id="inFrom" class="custom-input" placeholder="예) 아들, 딸, 이하늘">
             </div>
         </div>
-
-        <div class="w-full max-w-[950px] mb-10">
-            <label class="block text-sm font-bold mb-2 ml-1 text-slate-600">마지막 메시지</label>
+        <div class="w-full max-w-[900px] mb-8">
+            <label class="block text-xs font-bold mb-1 text-slate-500">마지막 메시지</label>
             <input id="inMsg" class="custom-input" placeholder="예) 용돈에 만족하셨으면 안아주세요:), 건강하고 행복하세요~">
         </div>
 
-        <button onclick="startApp()" class="btn-blue px-24 py-5 text-xl">서프라이즈 시작하기</button>
+        <button onclick="startApp()" class="btn-blue px-20 py-4 text-lg">서프라이즈 시작하기</button>
     </div>
 
     <div id="page2" class="page bg-slate-50">
-        <div class="text-center px-10">
-            <p id="p2Text" class="text-4xl font-black leading-tight mb-14 text-slate-800"></p>
-            <button onclick="goToPage(3)" class="btn-blue px-20 py-6 text-2xl">출금하기</button>
+        <div class="text-center">
+            <p id="p2Text" class="text-3xl font-black leading-tight mb-12 text-slate-800"></p>
+            <button onclick="goToPage(3)" class="btn-blue px-20 py-5 text-2xl">출금하기</button>
         </div>
     </div>
 
     <div id="page3" class="page">
-        <h2 class="text-2xl font-bold mb-8">비번을 입력하세요</h2>
-        <div class="flex gap-4 mb-12">
+        <h2 class="text-xl font-bold mb-6">비번을 입력하세요</h2>
+        <div class="flex gap-4 mb-8">
             <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
             <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
         </div>
-        <div class="numpad-grid">
-            <button class="num-btn" onclick="pressKey('1')">1</button>
-            <button class="num-btn" onclick="pressKey('2')">2</button>
-            <button class="num-btn" onclick="pressKey('3')">3</button>
-            <button class="num-btn" onclick="pressKey('4')">4</button>
-            <button class="num-btn" onclick="pressKey('5')">5</button>
-            <button class="num-btn" onclick="pressKey('6')">6</button>
-            <button class="num-btn" onclick="pressKey('7')">7</button>
-            <button class="num-btn" onclick="pressKey('8')">8</button>
-            <button class="num-btn" onclick="pressKey('9')">9</button>
-            <button class="num-btn" onclick="pressKey('0')">0</button>
-            <button class="num-btn bg-slate-200" onclick="clearPin()">⌫</button>
-            <button class="num-btn bg-blue-600 text-white !text-lg" onclick="finishPin()">입력완료</button>
+        <div class="numpad-container">
+            <div class="numpad-grid">
+                <button class="num-btn" onclick="pressKey('1')">1</button>
+                <button class="num-btn" onclick="pressKey('2')">2</button>
+                <button class="num-btn" onclick="pressKey('3')">3</button>
+                <button class="num-btn" onclick="pressKey('4')">4</button>
+                <button class="num-btn" onclick="pressKey('5')">5</button>
+                <button class="num-btn" onclick="pressKey('6')">6</button>
+                <button class="num-btn" onclick="pressKey('7')">7</button>
+                <button class="num-btn" onclick="pressKey('8')">8</button>
+                <button class="num-btn" onclick="pressKey('9')">9</button>
+                <button class="num-btn special" onclick="clearPin()">⌫</button>
+                <button class="num-btn" onclick="pressKey('0')">0</button>
+                <button class="num-btn done" onclick="finishPin()">입력완료</button>
+            </div>
         </div>
     </div>
 
     <div id="page4" class="page">
         <div id="waiting" class="text-center">
-            <div class="text-[100px] mb-8 animate-bounce">💳</div>
-            <h2 class="text-4xl font-black text-slate-800">용돈 출금을 위해서<br>카드를 넣어주세요</h2>
-            <div class="mt-10 flex flex-col items-center">
-                <div class="w-16 h-16 border-8 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                <p class="mt-6 text-slate-400 font-bold text-lg">보안 연결 중... (10초)</p>
+            <div class="text-8xl mb-6 animate-bounce">💳</div>
+            <h2 class="text-3xl font-black text-slate-800">용돈 출금을 위해서<br>카드를 넣어주세요</h2>
+            <div class="mt-8 flex flex-col items-center">
+                <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <p class="mt-4 text-slate-400 font-bold">보안 연결 중... (10초)</p>
             </div>
         </div>
         <div id="final" class="hidden text-center scale-125">
-            <h1 id="finalMsg" class="text-5xl font-black text-blue-600 leading-tight"></h1>
-            <p class="text-2xl text-slate-400 mt-8 font-bold">🎉 입금이 완료되었습니다! 🎉</p>
+            <h1 id="finalMsg" class="text-4xl font-black text-blue-600 leading-tight"></h1>
+            <p class="text-xl text-slate-500 mt-6 font-bold">용돈이 출금이 되었습니다 🥳</p>
         </div>
     </div>
 
@@ -127,11 +134,9 @@
         function goToPage(num) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById('page' + num).classList.add('active');
-            
-            // [검토사항] 2페이지부터 자동 풀스크린 활성화
             if(num >= 2) {
                 const el = document.documentElement;
-                if(el.requestFullscreen) el.requestFullscreen();
+                if(el.requestFullscreen) el.requestFullscreen().catch(()=>{});
                 else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
             }
         }
@@ -143,11 +148,10 @@
                 from: document.getElementById('inFrom').value,
                 msg: document.getElementById('inMsg').value
             };
-            if(!config.name || !config.event || !config.from) return alert("정보를 모두 입력해주세요!");
+            if(!config.name || !config.event) return alert("필수 정보를 입력하세요!");
 
-            // [검토사항] 안내 메시지 구성
             document.getElementById('p2Text').innerHTML = 
-                `<span class="text-blue-600">${config.name}</span>의 <span class="text-blue-600">${config.event}</span> 기념으로<br><span class="text-blue-600">${config.from}</span>이 용돈 서비스를 준비하셨습니다`;
+                `<span class="text-blue-600">${config.name}</span>의 <span class="text-blue-600">${config.event}</span> 기념으로<br><span class="text-blue-600">${config.from}</span>님이 용돈 서비스를 준비하셨습니다`;
             
             goToPage(2);
         }
@@ -160,10 +164,8 @@
         }
 
         function finishPin() {
-            if(pin.length < 1) return;
+            if(pin.length === 0) return;
             goToPage(4);
-            
-            // [검토사항] 10초 후 자동 메시지 전환
             setTimeout(() => {
                 document.getElementById('waiting').classList.add('hidden');
                 document.getElementById('final').classList.remove('hidden');
@@ -172,7 +174,7 @@
             }, 10000);
         }
 
-        // --- [검토사항] 3D 폭발 컨페티 엔진 (중심/사방/무한반복) ---
+        // 3D 무한 컨페티 엔진
         const canvas = document.getElementById('confetti-canvas');
         const ctx = canvas.getContext('2d');
         let particles = [];
@@ -185,16 +187,9 @@
         class Particle {
             constructor() { this.reset(); }
             reset() {
-                // 중심 또는 사방 랜덤 폭발 위치 선정
-                const mode = Math.random();
-                if(mode > 0.4) { // 중심 폭발
-                    this.x = window.innerWidth / 2;
-                    this.y = window.innerHeight / 2;
-                } else { // 사방 폭발
-                    this.x = Math.random() * window.innerWidth;
-                    this.y = Math.random() * window.innerHeight;
-                }
-                this.size = Math.random() * 10 + 5;
+                this.x = Math.random() > 0.4 ? window.innerWidth / 2 : Math.random() * window.innerWidth;
+                this.y = Math.random() > 0.4 ? window.innerHeight / 2 : Math.random() * window.innerHeight;
+                this.size = Math.random() * 8 + 4;
                 this.color = colors[Math.floor(Math.random() * colors.length)];
                 this.vx = (Math.random() - 0.5) * 20;
                 this.vy = (Math.random() - 0.5) * 20;
@@ -202,16 +197,11 @@
                 this.gravity = 0.15;
             }
             update() {
-                this.vx *= 0.98;
-                this.vy += this.gravity;
-                this.x += this.vx;
-                this.y += this.vy;
-                this.opacity -= 0.008;
-                if (this.opacity <= 0) this.reset(); // 무한 반복 랜덤 재생성
+                this.vx *= 0.99; this.vy += this.gravity; this.x += this.vx; this.y += this.vy; this.opacity -= 0.008;
+                if (this.opacity <= 0) this.reset();
             }
             draw() {
-                ctx.fillStyle = this.color;
-                ctx.globalAlpha = this.opacity;
+                ctx.fillStyle = this.color; ctx.globalAlpha = this.opacity;
                 ctx.beginPath();
                 if(Math.random() > 0.5) ctx.arc(this.x, this.y, this.size/2, 0, Math.PI*2);
                 else ctx.fillRect(this.x, this.y, this.size, this.size);
