@@ -8,73 +8,51 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
     
-    <title>용돈 서프라이즈 파트너</title>
+    <title>용돈 서프라이즈</title>
     <script src="https://cdn.tailwindcss.com/3.4.17"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
     
     <style>
-        /* [핵심] 전체 화면 잠금 설정 */
-        * { 
-            font-family: 'Noto Sans KR', sans-serif; 
-            box-sizing: border-box; 
-            -webkit-tap-highlight-color: transparent; 
-            /* 텍스트 선택 방지 */
-            -webkit-user-select: none; 
-            user-select: none;
-        }
+        * { font-family: 'Noto Sans KR', sans-serif; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body, html { height: 100dvh; margin: 0; overflow: hidden; background: #fff; position: fixed; width: 100%; }
 
-        body, html { 
-            height: 100dvh; 
-            margin: 0; 
-            padding: 0;
-            /* 스크롤 및 확대 제스처 차단 */
-            overflow: hidden; 
-            touch-action: none; 
-            background: #fff; 
-            position: fixed; 
-            width: 100%;
-        }
-
-        /* [예외] 입력창은 터치와 선택이 가능해야 함 */
-        input, textarea { 
-            -webkit-user-select: text !important; 
-            user-select: text !important; 
-            touch-action: auto !important;
-        }
-
+        /* 가로 모드 강제 안내 */
         #rotate-overlay {
             display: none; position: fixed; inset: 0; background: white; z-index: 10000;
             flex-direction: column; align-items: center; justify-content: center; text-align: center;
         }
         @media (orientation: portrait) { #rotate-overlay { display: flex; } }
 
-        .page { 
-            display: none; width: 100%; height: 100%; 
-            flex-direction: column; align-items: center; justify-content: center; 
-            padding: 20px; background: white; position: absolute;
+        /* 홈 화면 추가 안내 팝업 */
+        #a2hs-guide {
+            display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 400px; background: white; border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15); z-index: 10001;
+            padding: 20px; border: 2px solid #2563eb; animation: fadeInUp 0.5s ease-out;
         }
+
+        .page { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; padding: 20px; background: white; position: absolute; }
         .page.active { display: flex; }
         
-        .btn-blue { background: #2563eb; color: white; border-radius: 12px; font-weight: 700; transition: all 0.2s; }
+        .btn-blue { background: #2563eb; color: white; border-radius: 14px; font-weight: 700; transition: all 0.2s; white-space: nowrap; }
         .btn-blue:active { transform: scale(0.96); opacity: 0.9; }
 
-        .input-row { display: flex; gap: 10px; width: 100%; max-width: 850px; margin-bottom: 12px; }
+        /* 입력창 한 줄 나열 */
+        .input-row { display: flex; gap: 10px; width: 100%; max-width: 900px; margin-bottom: 15px; }
         .input-group { flex: 1; text-align: left; }
-        .custom-input { width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 12px; outline: none; font-size: 14px; }
-        .custom-input:focus { border-color: #2563eb; }
+        .custom-input { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 12px; outline: none; font-size: 14px; }
 
-        /* 3x4 키패드 (컴팩트 사이즈) */
-        .keypad-wrapper { transform: scale(0.8); display: flex; flex-direction: column; align-items: center; }
-        .keypad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 260px; margin-bottom: 15px; }
-        .key-btn { background: #f1f5f9; padding: 15px; border-radius: 14px; font-size: 24px; font-weight: 700; border: none; color: #1e293b; }
-        .key-btn:active { background: #e2e8f0; transform: scale(0.95); }
+        /* 3x4 표준 키패드 */
+        .keypad-container { transform: scale(0.85); width: 100%; max-width: 300px; }
+        .keypad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
+        .key-btn { background: #f1f5f9; padding: 15px; border-radius: 16px; font-size: 24px; font-weight: 700; color: #1e293b; border: none; }
+        .key-btn:active { background: #e2e8f0; }
 
-        .pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #2563eb; transition: background 0.2s; }
+        .pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #2563eb; }
         .pin-dot.filled { background: #2563eb; }
 
         canvas { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 100; }
-        .spinner { width: 35px; height: 35px; border: 4px solid #f3f3f3; border-top: 4px solid #2563eb; border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
     </style>
 </head>
 <body>
@@ -82,46 +60,48 @@
     <div id="rotate-overlay">
         <div style="font-size: 50px; margin-bottom: 15px;">📱↔️</div>
         <h2 style="font-size: 22px; font-weight: 900; color: #1e293b;">화면을 가로로 돌려주세요</h2>
-        <p style="color: #64748b; font-size: 14px; margin-top: 10px;">가로 모드 고정형 앱입니다</p>
+        <p style="color: #64748b;">가로 모드에서 최적화된 화면이 나타납니다</p>
+    </div>
+
+    <div id="a2hs-guide">
+        <div id="guide-content" class="text-center"></div>
+        <button onclick="closeGuide()" class="mt-4 text-xs text-slate-400 underline">나중에 할게요</button>
     </div>
 
     <canvas id="confetti-canvas"></canvas>
 
     <div id="page1" class="page active">
-        <div style="font-size: 40px; margin-bottom: 5px;">🎁</div>
-        <h1 style="font-size: 22px; font-weight: 900; margin-bottom: 20px;">용돈 서프라이즈 만들기</h1>
+        <h1 style="font-size: 24px; font-weight: 900; margin-bottom: 20px;">🎁 용돈 서프라이즈 만들기</h1>
         <div class="input-row">
             <div class="input-group">
-                <label style="font-size: 11px; font-weight: 700; color: #64748b; margin-left: 4px;">받는 사람</label>
-                <input id="inName" class="custom-input" placeholder="이름">
+                <label style="font-size: 11px; font-weight: 700; color: #64748b;">받는 사람</label>
+                <input id="inName" class="custom-input" placeholder="예) 엄마, 이순자">
             </div>
             <div class="input-group">
-                <label style="font-size: 11px; font-weight: 700; color: #64748b; margin-left: 4px;">이벤트명</label>
-                <input id="inEvent" class="custom-input" placeholder="예: 환갑">
+                <label style="font-size: 11px; font-weight: 700; color: #64748b;">이벤트명</label>
+                <input id="inEvent" class="custom-input" placeholder="예) 생일, 환갑">
             </div>
             <div class="input-group">
-                <label style="font-size: 11px; font-weight: 700; color: #64748b; margin-left: 4px;">준비한 사람</label>
-                <input id="inFrom" class="custom-input" placeholder="보내는 이">
+                <label style="font-size: 11px; font-weight: 700; color: #64748b;">준비한 사람</label>
+                <input id="inFrom" class="custom-input" placeholder="예) 아들, 딸">
             </div>
         </div>
-        <div style="width: 100%; max-width: 850px; margin-bottom: 20px;">
-            <label style="font-size: 11px; font-weight: 700; color: #64748b; margin-left: 4px;">마지막 메시지</label>
-            <input id="inMsg" class="custom-input" placeholder="마지막에 보여줄 메시지">
+        <div style="width: 100%; max-width: 900px; margin-bottom: 20px;">
+            <label style="font-size: 11px; font-weight: 700; color: #64748b;">마지막 메시지</label>
+            <input id="inMsg" class="custom-input" placeholder="예) 용돈에 만족하셨으면 안아주세요 :)">
         </div>
-        <button onclick="startApp()" class="btn-blue px-24 py-4 text-lg">시작하기</button>
+        <button onclick="startApp()" class="btn-blue px-20 py-4 text-lg">시작하기</button>
     </div>
 
     <div id="page2" class="page">
-        <div class="text-center px-6">
-            <p id="p2Msg" style="font-size: 28px; font-weight: 800; line-height: 1.5; color: #1e293b; margin-bottom: 30px;"></p>
-            <button onclick="goToPage(3)" class="btn-blue px-20 py-5 text-xl">출금하기</button>
-        </div>
+        <p id="p2Msg" style="font-size: 30px; font-weight: 800; line-height: 1.5; margin-bottom: 35px; text-align: center;"></p>
+        <button onclick="goToPage(3)" class="btn-blue px-16 py-5 text-xl">출금하기</button>
     </div>
 
     <div id="page3" class="page">
-        <div class="keypad-wrapper">
-            <h2 style="font-size: 18px; font-weight: 700; margin-bottom: 15px;">비밀번호를 입력하세요</h2>
-            <div class="flex gap-4 mb-6">
+        <div class="keypad-container">
+            <h2 class="text-center font-bold mb-4">비밀번호를 입력하세요</h2>
+            <div class="flex justify-center gap-3 mb-6">
                 <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
                 <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
             </div>
@@ -135,25 +115,22 @@
                 <button class="key-btn" onclick="pressKey('7')">7</button>
                 <button class="key-btn" onclick="pressKey('8')">8</button>
                 <button class="key-btn" onclick="pressKey('9')">9</button>
-                <button class="key-btn" style="background: #e2e8f0; font-size: 16px;" onclick="clearPin()">⌫</button>
+                <button class="key-btn" style="background:#e2e8f0;" onclick="clearPin()">⌫</button>
                 <button class="key-btn" onclick="pressKey('0')">0</button>
-                <button onclick="finishPin()" class="btn-blue text-xs">입력완료</button>
+                <button class="btn-blue text-sm" onclick="finishPin()">입력완료</button>
             </div>
         </div>
     </div>
 
     <div id="page4" class="page">
-        <div id="wait-section" class="text-center">
-            <div style="font-size: 70px; margin-bottom: 15px; animation: bounce 1.5s infinite;">💳</div>
-            <h2 style="font-size: 26px; font-weight: 900; color: #1e293b;">용돈 출금을 위해서<br>카드를 넣어주세요</h2>
-            <div class="flex flex-col items-center mt-6">
-                <div class="spinner"></div>
-                <p style="color: #94a3b8; font-weight: 700; margin-top: 10px; font-size: 12px;">보안 연결 중 (10초)</p>
-            </div>
+        <div id="waiting" class="text-center">
+            <div style="font-size: 70px; margin-bottom: 15px; animation: bounce 1s infinite;">💳</div>
+            <h2 style="font-size: 28px; font-weight: 900;">용돈 출금을 위해서<br>카드를 넣어주세요</h2>
+            <p style="color: #94a3b8; font-weight: 700; margin-top: 20px;">보안 연결 중 (10초)</p>
         </div>
-        <div id="final-section" style="display: none; text-align: center;">
-            <h1 id="final-msg" style="font-size: 38px; font-weight: 900; color: #2563eb; line-height: 1.3;"></h1>
-            <p style="font-size: 18px; font-weight: 700; color: #64748b; margin-top: 20px;">용돈이 출금이 되었습니다 🥳</p>
+        <div id="final" class="hidden text-center scale-125">
+            <h1 id="finalMsg" class="text-4xl font-black text-blue-600"></h1>
+            <p class="text-xl text-slate-500 mt-6 font-bold">용돈이 출금이 되었습니다 🥳</p>
         </div>
     </div>
 
@@ -164,33 +141,40 @@
         const ctx = canvas.getContext('2d');
         let particles = [];
 
-        // [추가] 브라우저 기본 드래그/스크롤 방지 스크립트
-        document.addEventListener('touchmove', function(e) {
-            // 입력창 이외의 영역에서는 터치 이동 차단
-            if (!e.target.closest('input')) {
-                e.preventDefault();
-            }
-        }, { passive: false });
+        // 홈 화면 가이드 로직
+        window.addEventListener('load', () => {
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+            if (isStandalone) return;
 
-        function triggerFull() {
-            const doc = document.documentElement;
-            if (doc.requestFullscreen) doc.requestFullscreen().catch(()=>{});
-            else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
-            window.scrollTo(0, 0);
-        }
+            const guide = document.getElementById('a2hs-guide');
+            const content = document.getElementById('guide-content');
+            if (isIOS) {
+                content.innerHTML = `<p class='font-bold'>📱 주소창 없는 전체화면으로 감동을!</p><p class='text-xs mt-2 text-slate-500'>하단의 <b>[공유 ↑]</b> 버튼을 누르고<br><b>[홈 화면에 추가]</b>를 선택해 주세요.</p>`;
+                guide.style.display = 'block';
+            } else if (/Android/.test(navigator.userAgent)) {
+                content.innerHTML = `<p class='font-bold'>🤖 진짜 앱처럼 실행하기</p><p class='text-xs mt-2 text-slate-500'>우측 상단 <b>[점 3개 ⋮]</b>를 누르고<br><b>[앱 설치]</b> 또는 <b>[홈 화면 추가]</b>를 눌러주세요.</p>`;
+                guide.style.display = 'block';
+            }
+        });
+
+        function closeGuide() { document.getElementById('a2hs-guide').style.display = 'none'; }
 
         function goToPage(num) {
-            triggerFull();
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById('page' + num).classList.add('active');
+            // 전체화면 시도
+            const el = document.documentElement;
+            if (el.requestFullscreen) el.requestFullscreen().catch(()=>{});
+            else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
         }
 
         function startApp() {
             userData = {
-                name: document.getElementById('inName').value.trim(),
-                event: document.getElementById('inEvent').value.trim(),
-                from: document.getElementById('inFrom').value.trim(),
-                msg: document.getElementById('inMsg').value.trim()
+                name: document.getElementById('inName').value,
+                event: document.getElementById('inEvent').value,
+                from: document.getElementById('inFrom').value,
+                msg: document.getElementById('inMsg').value
             };
             if(!userData.name || !userData.event) return alert("정보를 입력해주세요!");
             document.getElementById('p2Msg').innerHTML = `<span style="color:#2563eb;">${userData.name}</span>의 <span style="color:#2563eb;">${userData.event}</span> 기념으로<br><span style="color:#2563eb;">${userData.from}</span>님이 용돈 서비스를 준비하셨습니다`;
@@ -208,48 +192,31 @@
             if(pin.length === 0) return;
             goToPage(4);
             setTimeout(() => {
-                document.getElementById('wait-section').style.display = 'none';
-                document.getElementById('final-section').style.display = 'block';
-                document.getElementById('final-msg').innerText = userData.msg || "축하합니다!";
+                document.getElementById('waiting').classList.add('hidden');
+                document.getElementById('final').classList.remove('hidden');
+                document.getElementById('finalMsg').innerText = userData.msg || "축하합니다!";
                 startConfetti();
             }, 10000);
         }
 
+        // 고성능 컨페티
         function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-        window.addEventListener('resize', resize);
-        resize();
-
-        class Particle {
+        window.addEventListener('resize', resize); resize();
+        class P {
             constructor() { this.reset(); }
             reset() {
-                this.x = Math.random() > 0.5 ? canvas.width/2 : Math.random() * canvas.width;
-                this.y = Math.random() > 0.5 ? canvas.height/2 : Math.random() * canvas.height;
-                this.size = Math.random() * 8 + 4;
-                this.color = `hsl(${Math.random() * 360}, 70%, 60%)`;
-                this.vx = (Math.random() - 0.5) * 20;
-                this.vy = (Math.random() - 0.5) * 20;
-                this.opacity = 1;
+                this.x = Math.random() > 0.4 ? canvas.width/2 : Math.random()*canvas.width;
+                this.y = Math.random() > 0.4 ? canvas.height/2 : Math.random()*canvas.height;
+                this.s = Math.random()*8+4; this.c = `hsl(${Math.random()*360},70%,60%)`;
+                this.vx = (Math.random()-0.5)*20; this.vy = (Math.random()-0.5)*20; this.o = 1;
             }
-            update() {
-                this.vx *= 0.99; this.vy += 0.15; this.x += this.vx; this.y += this.vy; this.opacity -= 0.008;
-                if(this.opacity <= 0) this.reset();
-            }
-            draw() {
-                ctx.globalAlpha = this.opacity; ctx.fillStyle = this.color;
-                ctx.fillRect(this.x, this.y, this.size, this.size);
-            }
+            u() { this.vx*=0.99; this.vy+=0.15; this.x+=this.vx; this.y+=this.vy; this.o-=0.01; if(this.o<=0) this.reset(); }
+            d() { ctx.globalAlpha=this.o; ctx.fillStyle=this.c; ctx.fillRect(this.x,this.y,this.s,this.s); }
         }
-
         function startConfetti() {
-            if(particles.length === 0) {
-                for(let i=0; i<150; i++) particles.push(new Particle());
-            }
-            function animate() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                particles.forEach(p => { p.update(); p.draw(); });
-                requestAnimationFrame(animate);
-            }
-            animate();
+            for(let i=0; i<150; i++) particles.push(new P());
+            function anim() { ctx.clearRect(0,0,canvas.width,canvas.height); particles.forEach(p=>{p.u();p.d();}); requestAnimationFrame(anim); }
+            anim();
         }
     </script>
 </body>
