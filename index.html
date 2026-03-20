@@ -150,7 +150,7 @@
             const guide = document.getElementById('a2hs-guide');
             const content = document.getElementById('guide-content');
             if (isIOS) {
-                content.innerHTML = `<p class='font-bold'>📱 주소창 없는 전체화면으로 감동을!</p><p class='text-xs mt-2 text-slate-500'>하단의 <b>[공유 ↑]</b> 버튼을 누르고<br><b>[홈 화면에 추가]</b>를 선택해 주세요.</p>`;
+                content.innerHTML = `<p class='font-bold'>📱 주소창 없는 전체화면으로 감동을!</p><p class='text-xs mt-2 text-slate-500'> [공유 ↑]</b> 버튼을 누르고<br><b>[홈 화면에 추가]</b>를 선택해 주세요.</p>`;
                 guide.style.display = 'block';
             } else if (/Android/.test(navigator.userAgent)) {
                 content.innerHTML = `<p class='font-bold'>🤖 진짜 앱처럼 실행하기</p><p class='text-xs mt-2 text-slate-500'>우측 상단 <b>[점 3개 ⋮]</b>를 누르고<br><b>[앱 설치]</b> 또는 <b>[홈 화면 추가]</b>를 눌러주세요.</p>`;
