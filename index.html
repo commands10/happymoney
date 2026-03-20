@@ -1,220 +1,422 @@
 <!doctype html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>용돈 서프라이즈 파트너</title>
-    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        * { font-family: 'Noto Sans KR', sans-serif; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body, html { height: 100dvh; margin: 0; overflow: hidden; background: #fff; position: fixed; width: 100%; }
-        
-        /* 가로 모드 안내 */
-        @media (orientation: portrait) { #rotate-overlay { display: flex !important; } }
-        #rotate-overlay { display: none; position: fixed; inset: 0; background: #fff; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; }
+<html lang="ko" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>용돈 서프라이즈</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&amp;display=swap" rel="stylesheet">
+  <style>
+  html, body { height: 100%; margin: 0; overflow: hidden; }
+  * { font-family: 'Noto Sans KR', sans-serif; box-sizing: border-box; }
 
-        .page { display: none; width: 100%; height: 100dvh; flex-direction: column; align-items: center; justify-content: center; padding: 20px; position: absolute; }
-        .page.active { display: flex; }
-        
-        /* 입력창 한 줄 나열 (가로 최적화) */
-        .input-row { display: flex; gap: 12px; width: 100%; max-width: 900px; margin-bottom: 20px; }
-        .input-group { flex: 1; }
-        .custom-input { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; outline: none; transition: all 0.2s; font-size: 15px; background: #f8fafc; }
-        .custom-input:focus { border-color: #3b82f6; background: #fff; }
+  .page { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; padding: 24px; position: absolute; z-index: 10; }
+  .page.active { display: flex; }
 
-        /* [핵심] 스크린샷 키패드 UI 재현 */
-        .keypad-container { width: 100%; max-width: 280px; display: flex; flex-direction: column; align-items: center; }
-        .pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #5c7cff; background: transparent; transition: all 0.2s; }
-        .pin-dot.filled { background: #5c7cff; }
+  /* Confetti canvas 전용 스타일 */
+  #confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; }
 
-        .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; margin-bottom: 20px; }
-        .num-btn { 
-            background: #f0f4f8; border-radius: 12px; height: 70px; 
-            font-size: 28px; font-weight: 800; color: #1e293b;
-            display: flex; align-items: center; justify-content: center; transition: all 0.1s;
-        }
-        .num-btn:active { background: #e2e8f0; transform: scale(0.95); }
-        
-        /* 하단 파란색 버튼 */
-        .btn-submit { 
-            background: #5c7cff; color: white; border-radius: 16px; 
-            width: 100%; padding: 18px 0; font-size: 20px; font-weight: 700; 
-            box-shadow: 0 4px 12px rgba(92, 124, 255, 0.3);
-        }
-        .btn-submit:active { transform: scale(0.97); opacity: 0.9; }
+  /* Keypad grid */
+  .keypad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 280px; width: 100%; }
+  .keypad-btn {
+    background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 12px;
+    font-size: 28px; font-weight: 700; color: #1e293b; cursor: pointer;
+    padding: 16px; transition: all 0.1s; user-select: none;
+  }
+  .keypad-btn:active { background: #dbeafe; transform: scale(0.95); }
 
-        canvas { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 100; }
-    </style>
-</head>
-<body>
+  /* Dot indicators for PIN */
+  .pin-dots { display: flex; gap: 12px; margin-bottom: 20px; }
+  .pin-dot {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid #3b82f6; background: transparent; transition: background 0.15s;
+  }
+  .pin-dot.filled { background: #3b82f6; }
 
-    <div id="rotate-overlay">
-        <div class="text-6xl mb-6">📱🔄</div>
-        <p class="text-2xl font-bold">화면을 가로로 돌려주세요</p>
-    </div>
+  /* Fade in animation */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .fade-in-up { animation: fadeInUp 0.6s ease forwards; }
 
-    <canvas id="confetti-canvas"></canvas>
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .fade-in { animation: fadeIn 0.8s ease forwards; }
 
-    <div id="page1" class="page active">
-        <div class="text-center mb-6">
-            <span class="text-4xl">🎁</span>
-            <h1 class="text-2xl font-black mt-2 text-slate-800">용돈 서프라이즈 만들기</h1>
-        </div>
-        <div class="input-row">
-            <div class="input-group"><label class="block text-xs font-bold mb-1 text-slate-500">받는 사람 이름</label><input id="inName" class="custom-input" placeholder="예) 엄마, 이순자"></div>
-            <div class="input-group"><label class="block text-xs font-bold mb-1 text-slate-500">이벤트명</label><input id="inEvent" class="custom-input" placeholder="예) 생일, 환갑"></div>
-            <div class="input-group"><label class="block text-xs font-bold mb-1 text-slate-500">준비한 사람</label><input id="inFrom" class="custom-input" placeholder="예) 아들, 딸, 이하늘"></div>
-        </div>
-        <div class="w-full max-w-[900px] mb-8">
-            <label class="block text-xs font-bold mb-1 text-slate-500">마지막 메시지</label>
-            <input id="inMsg" class="custom-input" placeholder="예) 용돈에 만족하셨으면 안아주세요:), 건강하고 행복하세요~">
-        </div>
-        <button onclick="startApp()" class="btn-submit !w-[300px]">서프라이즈 시작하기</button>
-    </div>
+  /* Landscape prompt */
+  .rotate-prompt {
+    display: none; position: fixed; inset: 0; z-index: 9999;
+    background: white; flex-direction: column; align-items: center; justify-content: center;
+  }
+  @media (orientation: portrait) {
+    .rotate-prompt.check-orientation { display: flex; }
+  }
 
-    <div id="page2" class="page bg-slate-50">
-        <div class="text-center px-10">
-            <p id="p2Text" class="text-3xl font-black leading-tight mb-14 text-slate-800"></p>
-            <button onclick="goToPage(3)" class="btn-submit !w-[250px] !text-2xl">출금하기</button>
-        </div>
-    </div>
+  /* Input styling */
+  .custom-input {
+    width: 100%; max-width: 420px; padding: 16px 20px;
+    border: 2px solid #e2e8f0; border-radius: 12px; font-size: 18px;
+    outline: none; transition: border-color 0.2s; font-family: 'Noto Sans KR', sans-serif;
+  }
+  .custom-input:focus { border-color: #3b82f6; }
+  .custom-input::placeholder { color: #94a3b8; }
 
-    <div id="page3" class="page">
-        <div class="keypad-container">
-            <h2 class="text-xl font-black mb-4">비밀번호를 입력하세요</h2>
-            <div class="flex gap-4 mb-10">
-                <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
-                <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
-            </div>
-            
-            <div class="numpad-grid">
-                <button class="num-btn" onclick="pressKey('1')">1</button>
-                <button class="num-btn" onclick="pressKey('2')">2</button>
-                <button class="num-btn" onclick="pressKey('3')">3</button>
-                <button class="num-btn" onclick="pressKey('4')">4</button>
-                <button class="num-btn" onclick="pressKey('5')">5</button>
-                <button class="num-btn" onclick="pressKey('6')">6</button>
-                <button class="num-btn" onclick="pressKey('7')">7</button>
-                <button class="num-btn" onclick="pressKey('8')">8</button>
-                <button class="num-btn" onclick="pressKey('9')">9</button>
-                <button class="num-btn" onclick="pressKey('*')">*</button>
-                <button class="num-btn" onclick="pressKey('0')">0</button>
-                <button class="num-btn" onclick="clearPin()">
-                    <i data-lucide="delete"></i>
-                </button>
-            </div>
-            
-            <button class="btn-submit" onclick="finishPin()">입력완료</button>
-        </div>
-    </div>
+  /* Blue button */
+  .btn-blue {
+    background: #3b82f6; color: white; border: none; border-radius: 14px;
+    padding: 16px 52px; font-size: 19px; font-weight: 700; cursor: pointer;
+    transition: all 0.2s; font-family: 'Noto Sans KR', sans-serif;
+  }
+  .btn-blue:hover { background: #2563eb; }
+  .btn-blue:active { transform: scale(0.97); }
+  .btn-blue:disabled { background: #93c5fd; cursor: not-allowed; }
 
-    <div id="page4" class="page">
-        <div id="waiting" class="text-center">
-            <div class="text-8xl mb-6 animate-bounce">💳</div>
-            <h2 class="text-3xl font-black text-slate-800">용돈 출금을 위해서<br>카드를 넣어주세요</h2>
-            <div class="mt-8 flex flex-col items-center">
-                <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                <p class="mt-4 text-slate-400 font-bold">보안 연결 중... (10초)</p>
-            </div>
-        </div>
-        <div id="final" class="hidden text-center scale-125">
-            <h1 id="finalMsg" class="text-4xl font-black text-blue-600 leading-tight"></h1>
-            <p class="text-xl text-slate-500 mt-6 font-bold">용돈이 출금이 되었습니다 🥳</p>
-        </div>
-    </div>
+  /* Message bubble */
+  .msg-bubble {
+    background: #f0f9ff; border: 2px solid #bfdbfe; border-radius: 20px;
+    padding: 20px 28px; max-width: 520px; text-align: center;
+  }
+</style>
+  <style>body { box-sizing: border-box; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full bg-white position: relative;">
+  <div id="app" style="width:100%;height:100%;position:relative;overflow:hidden;">
+      <div id="rotate-prompt" class="rotate-prompt">
+    <div style="font-size: 48px; margin-bottom: 16px;">
+     📱↔️
+    </div>
+    <p style="font-size: 18px; font-weight: 700; color: #1e293b;">화면을 가로로 돌려주세요</p>
+    <p style="font-size: 14px; color: #64748b; margin-top: 8px;">가로 모드에서 최적화된 화면입니다</p>
+   </div>   <div id="page1" class="page active" style="gap: 16px;">
+    <div style="font-size: 28px; margin-bottom: 4px;">
+     🎁
+    </div>
+    <h1 style="font-size: 26px; font-weight: 900; color: #1e293b; margin: 0;">용돈 서프라이즈 만들기</h1>
+    <p style="font-size: 15px; color: #64748b; margin: 0 0 8px 0;">정보를 입력하고 서프라이즈를 시작하세요</p><input id="input-name" class="custom-input" type="text" placeholder="받는 사람 이름 (예: 엄마, 이순자)" autocomplete="off"> <input id="input-event" class="custom-input" type="text" placeholder="이벤트명 (예: 생일, 환갑)" autocomplete="off"> <input id="input-preparer" class="custom-input" type="text" placeholder="준비한 사람 (예: 아들, 딸, 이하늘)" autocomplete="off"> <input id="input-message" class="custom-input" type="text" placeholder="마지막 메시지 (예: 용돈에 만족하셨으면 안아주세요 :))" autocomplete="off"> <button id="btn-start" class="btn-blue" disabled onclick="goToPage(2)">시작하기</button>
+   </div>   <div id="page2" class="page" style="gap: 20px;">
+    <div style="text-align: center;">
+     <p id="announce-text" style="font-size: 50px; font-weight: 700; color: #1e293b; line-height: 1.6; margin: 0; animation: fadeInUp 0.6s ease forwards;"></p>
+     <p style="font-size: 50px; font-weight: 500; color: #1e293b; line-height: 1.6; margin: 20px 0 0 0; animation: fadeInUp 0.6s ease forwards; animation-delay: 0.15s;">용돈 출금을 위해서 카드를 넣어주세요</p>
+    </div><button class="btn-blue fade-in-up" style="animation-delay: 0.3s;" onclick="goToPage(3)"> 💳 출금하기 </button>
+   </div>   <div id="page3" class="page" style="gap: 12px;">
+    <p style="font-size: 20px; font-weight: 700; color: #1e293b; margin: 0;">비밀번호를 입력하세요</p>
+    <div class="pin-dots" id="pin-dots">
+     <div class="pin-dot"></div>
+     <div class="pin-dot"></div>
+     <div class="pin-dot"></div>
+     <div class="pin-dot"></div>
+     <div class="pin-dot"></div>
+     <div class="pin-dot"></div>
+    </div>
+    <div class="keypad-grid" id="keypad">
+     <button class="keypad-btn" onclick="pressKey('1')">1</button> <button class="keypad-btn" onclick="pressKey('2')">2</button> <button class="keypad-btn" onclick="pressKey('3')">3</button> <button class="keypad-btn" onclick="pressKey('4')">4</button> <button class="keypad-btn" onclick="pressKey('5')">5</button> <button class="keypad-btn" onclick="pressKey('6')">6</button> <button class="keypad-btn" onclick="pressKey('7')">7</button> <button class="keypad-btn" onclick="pressKey('8')">8</button> <button class="keypad-btn" onclick="pressKey('9')">9</button> <button class="keypad-btn" onclick="pressKey('*')">*</button> <button class="keypad-btn" onclick="pressKey('0')">0</button> <button class="keypad-btn" onclick="clearPin()">⌫</button>
+    </div><button class="btn-blue" style="margin-top: 12px;" onclick="submitPin()">입력완료</button>
+   </div>   <div id="page4" class="page" style="gap: 20px;">
+    <div id="card-msg" class="fade-in-up" style="text-align: center;">
+     <p style="font-size: 32px; font-weight: 700; color: #1e293b; margin: 0;">용돈 출금을 위해서<br>
+        카드를 넣어주세요</p>
+    </div>
+    <div id="final-msg" style="display: none; text-align: center;" class="fade-in-up">
+     <p id="custom-final-text" style="font-size: 50px; color: #3b82f6; font-weight: 700; margin: 0;"></p>
+          <p style="font-size: 20px; color: #64748b; font-weight: 500; margin: 10px 0 0 0;">용돈이 출금이 되었습니다 🥳</p>
+    </div>
+   </div>
+  </div>
+  
+    <canvas id="confetti-canvas"></canvas>
+  
+  <script>
+// State
+let currentPage = 1;
+let pinCode = '';
+let finalTimer = null;
 
-    <script>
-        let pin = "";
-        let config = {};
+// Config
+const defaultConfig = {
+  recipient_placeholder: '받는 사람 이름 (예: 엄마, 이순자)',
+  event_placeholder: '이벤트명 (예: 생일, 환갑)',
+  preparer_placeholder: '준비한 사람 (예: 아들, 딸, 이하늘)',
+  message_placeholder: '마지막 메시지 (예: 용돈에 만족하셨으면 안아주세요 :))',
+  primary_color: '#3b82f6',
+  bg_color: '#ffffff',
+  text_color: '#1e293b',
+  surface_color: '#f0f9ff',
+  accent_color: '#bfdbfe',
+  font_family: 'Noto Sans KR',
+  font_size: 16
+};
 
-        function goToPage(num) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById('page' + num).classList.add('active');
-            if(num >= 2) {
-                const el = document.documentElement;
-                if(el.requestFullscreen) el.requestFullscreen().catch(()=>{});
-                else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-            }
-        }
+// Element SDK init
+window.elementSdk.init({
+  defaultConfig,
+  onConfigChange: async (config) => {
+    const c = { ...defaultConfig, ...config };
+    // Colors
+    document.body.style.backgroundColor = c.bg_color;
 
-        function startApp() {
-            config = {
-                name: document.getElementById('inName').value,
-                event: document.getElementById('inEvent').value,
-                from: document.getElementById('inFrom').value,
-                msg: document.getElementById('inMsg').value
-            };
-            if(!config.name || !config.event) return alert("필수 정보를 입력하세요!");
-            document.getElementById('p2Text').innerHTML = `<span class="text-blue-600">${config.name}</span>의 <span class="text-blue-600">${config.event}</span> 기념으로<br><span class="text-blue-600">${config.from}</span>님이 용돈 서비스를 준비하셨습니다`;
-            goToPage(2);
-        }
+    document.querySelectorAll('.btn-blue').forEach(btn => {
+      btn.style.backgroundColor = c.primary_color;
+    });
+    document.querySelectorAll('.msg-bubble').forEach(el => {
+      el.style.backgroundColor = c.surface_color;
+      el.style.borderColor = c.accent_color;
+    });
+    document.querySelectorAll('.pin-dot').forEach(dot => {
+      dot.style.borderColor = c.primary_color;
+      if (dot.classList.contains('filled')) dot.style.backgroundColor = c.primary_color;
+    });
 
-        function pressKey(n) { if(pin.length < 6) { pin += n; updateDots(); } }
-        function clearPin() { pin = pin.slice(0, -1); updateDots(); }
-        function updateDots() {
-            const dots = document.querySelectorAll('.pin-dot');
-            dots.forEach((d, i) => i < pin.length ? d.classList.add('filled') : d.classList.remove('filled'));
-        }
+    // Font
+    const fontStack = `${c.font_family}, sans-serif`;
+    document.body.style.fontFamily = fontStack;
+    document.querySelectorAll('.custom-input, .btn-blue').forEach(el => {
+      el.style.fontFamily = fontStack;
+    });
 
-        function finishPin() {
-            if(pin.length === 0) return;
-            goToPage(4);
-            setTimeout(() => {
-                document.getElementById('waiting').classList.add('hidden');
-                document.getElementById('final').classList.remove('hidden');
-                document.getElementById('finalMsg').innerText = config.msg || "축하합니다!";
-                startInfiniteConfetti();
-            }, 10000);
-        }
+    // Text color
+    document.querySelectorAll('h1, p').forEach(el => {
+      if (!el.style.color || el.style.color === defaultConfig.text_color) {
+        el.style.color = c.text_color;
+      }
+    });
 
-        // 3D 무한 컨페티 엔진
-        const canvas = document.getElementById('confetti-canvas');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-        const colors = ['#2563eb', '#f59e0b', '#ef4444', '#10b981', '#8b5cf6', '#ec4899'];
-        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-        window.addEventListener('resize', resize);
-        resize();
+    // Placeholders
+    const nameInput = document.getElementById('input-name');
+    const eventInput = document.getElementById('input-event');
+    const preparerInput = document.getElementById('input-preparer');
+    const messageInput = document.getElementById('input-message');
+    if (nameInput) nameInput.placeholder = c.recipient_placeholder || defaultConfig.recipient_placeholder;
+    if (eventInput) eventInput.placeholder = c.event_placeholder || defaultConfig.event_placeholder;
+    if (preparerInput) preparerInput.placeholder = c.preparer_placeholder || defaultConfig.preparer_placeholder;
+    if (messageInput) messageInput.placeholder = c.message_placeholder || '마지막 메시지';
+  },
+  mapToCapabilities: (config) => {
+    const c = { ...defaultConfig, ...config };
+    return {
+      recolorables: [
+        { get: () => c.bg_color || defaultConfig.bg_color, set: (v) => { c.bg_color = v; window.elementSdk.setConfig({ bg_color: v }); } },
+        { get: () => c.surface_color || defaultConfig.surface_color, set: (v) => { c.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); } },
+        { get: () => c.text_color || defaultConfig.text_color, set: (v) => { c.text_color = v; window.elementSdk.setConfig({ text_color: v }); } },
+        { get: () => c.primary_color || defaultConfig.primary_color, set: (v) => { c.primary_color = v; window.elementSdk.setConfig({ primary_color: v }); } },
+        { get: () => c.accent_color || defaultConfig.accent_color, set: (v) => { c.accent_color = v; window.elementSdk.setConfig({ accent_color: v }); } }
+      ],
+      borderables: [],
+      fontEditable: {
+        get: () => c.font_family || defaultConfig.font_family,
+        set: (v) => { c.font_family = v; window.elementSdk.setConfig({ font_family: v }); }
+      },
+      fontSizeable: {
+        get: () => c.font_size || defaultConfig.font_size,
+        set: (v) => { c.font_size = v; window.elementSdk.setConfig({ font_size: v }); }
+      }
+    };
+  },
+  mapToEditPanelValues: (config) => {
+    const c = { ...defaultConfig, ...config };
+    return new Map([
+      ['recipient_placeholder', c.recipient_placeholder || defaultConfig.recipient_placeholder],
+      ['event_placeholder', c.event_placeholder || defaultConfig.event_placeholder],
+  0,
+      ['preparer_placeholder', c.preparer_placeholder || defaultConfig.preparer_placeholder],
+      ['message_placeholder', c.message_placeholder || defaultConfig.message_placeholder]
+    ]);
+  }
+});
 
-        class Particle {
-            constructor() { this.reset(); }
-            reset() {
-                this.x = Math.random() > 0.4 ? window.innerWidth / 2 : Math.random() * window.innerWidth;
-                this.y = Math.random() > 0.4 ? window.innerHeight / 2 : Math.random() * window.innerHeight;
-                this.size = Math.random() * 8 + 4;
-                this.color = colors[Math.floor(Math.random() * colors.length)];
-                this.vx = (Math.random() - 0.5) * 20;
-                this.vy = (Math.random() - 0.5) * 20;
-                this.opacity = 1;
-                this.gravity = 0.15;
-            }
-            update() {
-                this.vx *= 0.99; this.vy += this.gravity; this.x += this.vx; this.y += this.vy; this.opacity -= 0.008;
-                if (this.opacity <= 0) this.reset();
-            }
-            draw() {
-                ctx.fillStyle = this.color; ctx.globalAlpha = this.opacity;
-                ctx.beginPath();
-                if(Math.random() > 0.5) ctx.arc(this.x, this.y, this.size/2, 0, Math.PI*2);
-                else ctx.fillRect(this.x, this.y, this.size, this.size);
-                ctx.fill();
-            }
-        }
+// Input validation
+const inputs = ['input-name', 'input-event', 'input-preparer', 'input-message'];
+inputs.forEach(id => {
+  document.getElementById(id).addEventListener('input', validateForm);
+});
 
-        function startInfiniteConfetti() {
-            for(let i=0; i<150; i++) particles.push(new Particle());
-            function animate() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                particles.forEach(p => { p.update(); p.draw(); });
-                requestAnimationFrame(animate);
-            }
-            animate();
-        }
+function validateForm() {
+  const allFilled = inputs.every(id => document.getElementById(id).value.trim() !== '');
+  document.getElementById('btn-start').disabled = !allFilled;
+}
 
-        // 아이콘 초기화
-        lucide.createIcons();
-    </script>
-</body>
+// Navigation
+function goToPage(num) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page' + num).classList.add('active');
+  currentPage = num;
+
+  // Enable landscape check from page 2 onward
+  const prompt = document.getElementById('rotate-prompt');
+  if (num >= 2) {
+    prompt.classList.add('check-orientation');
+    tryFullscreen();
+  } else {
+    prompt.classList.remove('check-orientation');
+  }
+
+  if (num === 2) {
+    const name = document.getElementById('input-name').value.trim();
+    const event = document.getElementById('input-event').value.trim();
+    const preparer = document.getElementById('input-preparer').value.trim();
+    document.getElementById('announce-text').innerHTML =
+      `<span style="color:#3b82f6;">${name}</span>의 <span style="color:#3b82f6;">${event}</span> 기념으로<br><span style="color:#3b82f6;">${preparer}</span>님이 용돈 서비스를 준비하셨습니다 🎉`;
+  }
+
+  if (num === 4) {
+    startPage4Sequence();
+  }
+}
+
+function tryFullscreen() {
+  const el = document.documentElement;
+  if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+  else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+}
+
+// PIN logic
+function pressKey(num) {
+  if (pinCode.length >= 6) return;
+  pinCode += num;
+$dots[pinCode.length - 1].style.backgroundColor = '#3b82f6';
+}
+
+function clearPin() {
+  if (pinCode.length === 0) return;
+$dots[pinCode.length - 1].style.backgroundColor = 'transparent';
+  pinCode = pinCode.slice(0, -1);
+}
+
+function submitPin() {
+  if (pinCode.length === 0) return;
+  goToPage(4);
+}
+
+// Page 4 sequence
+function startPage4Sequence() {
+  document.getElementById('card-msg').style.display = '';
+  document.getElementById('final-msg').style.display = 'none';
+
+  finalTimer = setTimeout(() => {
+    document.getElementById('card-msg').style.display = 'none';
+    const finalMsg = document.getElementById('final-msg');
+    finalMsg.style.display = '';
+
+    const customText = document.getElementById('input-message').value.trim();
+    const customEl = document.getElementById('custom-final-text');
+    if (customText) {
+      customEl.textContent = customText;
+      customEl.style.display = '';
+    } else {
+      customEl.style.display = 'none';
+    }
+
+    // ⭐ DOM 방식 대신 Canvas 방식 호출 ⭐
+    launchConfetti();
+  }, 10000);
+}
+
+// ⭐ New Canvas Confetti Logic ⭐
+const canvas = document.getElementById('confetti-canvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+const PARTICLE_COUNT = 300; 
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+class Particle {
+  constructor(x, y, color) {
+    this.x = x;
+    this.y = y;
+    this.color = color;
+    this.size = 6 + Math.random() * 12;
+    this.vx = (Math.random() - 0.5) * 15; // Explosive velocity
+    this.vy = (Math.random() - 0.5) * 15 - Math.random() * 3; // Upward boost
+    this.gravity = 0.12 + Math.random() * 0.08;
+    this.friction = 0.98;
+    this.rotation = Math.random() * 360;
+    this.rotationSpeed = (Math.random() - 0.5) * 15;
+    this.shape = Math.random() > 0.5 ? 'rect' : 'circle';
+    this.opacity = 1;
+  }
+
+  update() {
+    this.vy += this.gravity;
+    this.vx *= this.friction;
+    this.vy *= this.friction;
+    this.x += this.vx;
+    this.y += this.vy;
+    this.rotation += this.rotationSpeed;
+    this.opacity -= 0.005; // Fade over time
+  }
+
+  draw() {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate((this.rotation * Math.PI) / 180);
+    ctx.globalAlpha = Math.max(0, this.opacity);
+    ctx.fillStyle = this.color;
+
+    if (this.shape === 'rect') {
+      ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+    } else {
+      ctx.beginPath();
+      ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+function createBurst(x, y, count) {
+  const colors = ['#2563eb', '#f59e0b', '#ef4444', '#10b981', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
+  for (let i = 0; i < count; i++) {
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    particles.push(new Particle(x, y, color));
+  }
+}
+
+function launchConfetti() {
+  particles = []; // Clear old particles
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+
+  // Multiple bursts like before
+  createBurst(cx, cy,PARTICLE_COUNT / 2); // Center main burst
+  setTimeout(() => createBurst(0, 0,PARTICLE_COUNT / 10), 200); // Top-left
+  setTimeout(() => createBurst(canvas.width, 0,PARTICLE_COUNT / 10), 350); // Top-right
+  setTimeout(() => createBurst(0, canvas.height,PARTICLE_COUNT / 10), 500); // Bottom-left
+  setTimeout(() => createBurst(canvas.width, canvas.height,PARTICLE_COUNT / 10), 650); // Bottom-right
+
+  animate();
+}
+
+let animationFrameId;
+function animate() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  let aliveParticles = false;
+
+  particles.forEach((p) => {
+    if (p.opacity <= 0.01) return; // Skip faded particles
+    aliveParticles = true;
+    p.update();
+    p.draw();
+  });
+
+  if (aliveParticles) {
+    animationFrameId = requestAnimationFrame(animate);
+  } else {
+    cancelAnimationFrame(animationFrameId);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+}
+
+lucide.createIcons();
+</script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9df2d5731544ea1d',t:'MTc3Mzk4OTk2My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
