@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>용돈 서프라이즈 파트너</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Noto Sans KR', sans-serif; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body, html { height: 100%; margin: 0; overflow: hidden; background: #fff; }
+        
+        /* 가로 모드 강제 안내 */
+        @media (orientation: portrait) {
+            #rotate-overlay { display: flex !important; }
+        }
+        #rotate-overlay {
+            display: none; position: fixed; inset: 0; background: #fff; z-index: 9999;
+            flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        .page { display: none; width: 100%; height: 100vh; flex-direction: column; align-items: center; justify-content: center; padding: 20px; position: absolute; }
+        .page.active { display: flex; }
+        
+        /* 버튼 스타일 */
+        .btn-blue { background: #2563eb; color: white; border-radius: 12px; font-weight: 700; transition: all 0.2s; white-space: nowrap; }
+        .btn-blue:active { transform: scale(0.95); opacity: 0.9; }
+        
+        /* 입력창 한 줄 나열 (가로 모드 최적화) */
+        .input-row { display: flex; gap: 10px; width: 100%; max-width: 900px; margin-bottom: 15px; }
+        .input-group { flex: 1; }
+        .custom-input { width: 100%; p: 12px; border: 2px solid #e2e8f0; border-radius: 10px; outline: none; transition: border-color 0.2s; font-size: 14px; background: #f8fafc; }
+        .custom-input:focus { border-color: #2563eb; background: #fff; }
+
+        /* 핀패드 */
+        .numpad-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; width: 100%; max-width: 500px; }
+        .num-btn { background: #f1f5f9; padding: 15px; border-radius: 12px; font-size: 20px; font-weight: 700; }
+        .pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #2563eb; }
+        .pin-dot.filled { background: #2563eb; }
+
+        canvas { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 100; }
+    </style>
+</head>
+<body>
+
+    <div id="rotate-overlay">
+        <div class="text-5xl mb-4">📱🔄</div>
+        <p class="text-xl font-bold">화면을 가로로 돌려주세요</p>
+    </div>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <div id="page1" class="page active">
+        <h1 class="text-2xl font-black mb-6 text-slate-800">🎁 용돈 서프라이즈 만들기</h1>
+        <div class="input-row">
+            <div class="input-group">
+                <label class="block text-xs font-bold mb-1 ml-1 text-slate-500 text-left">받는 사람 (예: 엄마, 이순자)</label>
+                <input id="inName" class="custom-input" placeholder="이름 입력">
+            </div>
+            <div class="input-group">
+                <label class="block text-xs font-bold mb-1 ml-1 text-slate-500 text-left">이벤트명 (예: 생일, 환갑)</label>
+                <input id="inEvent" class="custom-input" placeholder="이벤트 입력">
+            </div>
+            <div class="input-group">
+                <label class="block text-xs font-bold mb-1 ml-1 text-slate-500 text-left">준비한 사람 (예: 아들, 딸)</label>
+                <input id="inFrom" class="custom-input" placeholder="보내는 이 입력">
+            </div>
+        </div>
+        <div class="w-full max-w-[900px] mb-6">
+            <label class="block text-xs font-bold mb-1 ml-1 text-slate-500 text-left">마지막 메시지 (예: 안아주세요:))</label>
+            <input id="inMsg" class="custom-input" placeholder="축하 메시지를 입력해 주세요">
+        </div>
+        <button onclick="startApp()" class="btn-blue px-20 py-4 text-lg shadow-lg shadow-blue-100">서프라이즈 시작하기</button>
+    </div>
+
+    <div id="page2" class="page bg-slate-50">
+        <div class="text-center">
+            <p id="p2Text" class="text-3xl font-bold leading-tight mb-10 text-slate-800"></p>
+            <button onclick="goToPage(3)" class="btn-blue px-16 py-5 text-2xl shadow-2xl">출금하기</button>
+        </div>
+    </div>
+
+    <div id="page3" class="page">
+        <h2 class="text-xl font-bold mb-6">비번을 입력하세요</h2>
+        <div class="flex gap-3 mb-8">
+            <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+            <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+        </div>
+        <div class="numpad-grid">
+            <button class="num-btn" onclick="pressKey('1')">1</button>
+            <button class="num-btn" onclick="pressKey('2')">2</button>
+            <button class="num-btn" onclick="pressKey('3')">3</button>
+            <button class="num-btn" onclick="pressKey('4')">4</button>
+            <button class="num-btn" onclick="pressKey('5')">5</button>
+            <button class="num-btn" onclick="pressKey('6')">6</button>
+            <button class="num-btn" onclick="pressKey('7')">7</button>
+            <button class="num-btn" onclick="pressKey('8')">8</button>
+            <button class="num-btn" onclick="pressKey('9')">9</button>
+            <button class="num-btn" onclick="pressKey('0')">0</button>
+            <button class="num-btn bg-slate-200" onclick="clearPin()">⌫</button>
+            <button class="num-btn bg-blue-600 text-white text-sm" onclick="finishPin()">입력완료</button>
+        </div>
+    </div>
+
+    <div id="page4" class="page">
+        <div id="waiting" class="text-center">
+            <div class="text-8xl mb-6 animate-bounce">💳</div>
+            <h2 class="text-3xl font-black text-slate-800">용돈 출금을 위해서<br>카드를 넣어주세요</h2>
+            <p class="mt-4 text-slate-400 font-bold">처리 중... (10초)</p>
+        </div>
+        <div id="final" class="hidden text-center scale-150">
+            <h1 id="finalMsg" class="text-4xl font-black text-blue-600 leading-tight"></h1>
+            <p class="text-xl text-slate-500 mt-4">🎉 입금이 완료되었습니다!</p>
+        </div>
+    </div>
+
+    <script>
+        let pin = "";
+        let config = {};
+
+        function goToPage(num) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('page' + num).classList.add('active');
+            
+            // 전체화면 (사용자 클릭 시점에만 가능)
+            if(num >= 2) {
+                const el = document.documentElement;
+                if(el.requestFullscreen) el.requestFullscreen();
+                else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+            }
+        }
+
+        function startApp() {
+            config = {
+                name: document.getElementById('inName').value,
+                event: document.getElementById('inEvent').value,
+                from: document.getElementById('inFrom').value,
+                msg: document.getElementById('inMsg').value
+            };
+            if(!config.name || !config.event) return alert("필수 정보를 입력해주세요!");
+
+            document.getElementById('p2Text').innerHTML = 
+                `<span class="text-blue-600">${config.name}</span>의 <span class="text-blue-600">${config.event}</span> 기념으로<br><span class="text-blue-600">${config.from}</span>이 용돈 서비스를 준비하셨습니다`;
+            
+            goToPage(2);
+        }
+
+        function pressKey(n) { if(pin.length < 6) { pin += n; updateDots(); } }
+        function clearPin() { pin = pin.slice(0, -1); updateDots(); }
+        function updateDots() {
+            const dots = document.querySelectorAll('.pin-dot');
+            dots.forEach((d, i) => i < pin.length ? d.classList.add('filled') : d.classList.remove('filled'));
+        }
+
+        function finishPin() {
+            if(pin.length === 0) return;
+            goToPage(4);
+            
+            // 정확히 10초 타이머
+            setTimeout(() => {
+                document.getElementById('waiting').classList.add('hidden');
+                document.getElementById('final').classList.remove('hidden');
+                document.getElementById('finalMsg').innerText = config.msg || "행복한 하루 되세요!";
+                startInfiniteConfetti();
+            }, 10000);
+        }
+
+        // --- 3D 폭발 컨페티 엔진 ---
+        const canvas = document.getElementById('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                // 중심 또는 랜덤 위치에서 폭발
+                this.x = Math.random() > 0.5 ? window.innerWidth / 2 : Math.random() * window.innerWidth;
+                this.y = Math.random() > 0.5 ? window.innerHeight / 2 : Math.random() * window.innerHeight;
+                this.size = Math.random() * 8 + 4;
+                this.color = `hsl(${Math.random() * 360}, 70%, 60%)`;
+                this.vx = (Math.random() - 0.5) * 15;
+                this.vy = (Math.random() - 0.5) * 15;
+                this.opacity = 1;
+                this.gravity = 0.1;
+            }
+            update() {
+                this.vx *= 0.99;
+                this.vy += this.gravity;
+                this.x += this.vx;
+                this.y += this.vy;
+                this.opacity -= 0.01;
+                if (this.opacity <= 0) this.reset();
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = this.opacity;
+                ctx.fillRect(this.x, this.y, this.size, this.size);
+            }
+        }
+
+        function startInfiniteConfetti() {
+            for(let i=0; i<150; i++) particles.push(new Particle());
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => { p.update(); p.draw(); });
+                requestAnimationFrame(animate);
+            }
+            animate();
+        }
+    </script>
+</body>
+</html>
